@@ -1,0 +1,3 @@
+hmax: 3
+LM-Cut: 3
+Cost: 10
