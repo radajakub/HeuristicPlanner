@@ -49,5 +49,5 @@ if __name__ == '__main__':
 
     strips = STRIPS.from_SAS(sys.argv[1])
     heuristic = Hmax(strips)
-    value = heuristic(strips.s0)
-    print(value)
+
+    print(heuristic(strips.s0))
