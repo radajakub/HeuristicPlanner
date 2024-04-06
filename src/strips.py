@@ -1,4 +1,5 @@
 import sys
+
 from id_machine import IdMachine
 
 
