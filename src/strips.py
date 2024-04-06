@@ -1,4 +1,5 @@
 import sys
+from id_machine import IdMachine
 
 
 class FDRVariable:
@@ -44,6 +45,8 @@ class FDROperator:
 
 class FDR:
     def __init__(self, path: str):
+        self.id_machine = IdMachine[str]()
+
         self.variables = []
         self.init_state = []
         self.goal_state = []
@@ -74,6 +77,7 @@ class FDR:
             value_num = int(lines[n])
             n += 1
             for _ in range(value_num):
+                # id = self.id_machine.get_id()
                 var.add_value(lines[n])
                 n += 1
 
@@ -138,7 +142,8 @@ class FDR:
             for _ in range(num_eff):
                 _, var_idx, from_idx, to_idx = [int(x) for x in lines[n].split()]
                 var = self.variables[var_idx]
-                operator.add_precondition(var.name, var.values[from_idx])
+                if from_idx != -1:
+                    operator.add_precondition(var.name, var.values[from_idx])
                 operator.add_effect(var.name, var.values[to_idx])
                 n += 1
 
@@ -167,9 +172,67 @@ class FDR:
         return res
 
 
+class STRIPSAction:
+    def __init__(self, pre: set[int], add: set[int], cost: int, name: str = None):
+        self.pre = pre
+        self.add = add
+        self.cost = cost
+        self.name = name
+
+
+class STRIPS:
+    @staticmethod
+    def from_SAS(path: str):
+        fdr = FDR(path)
+
+        # translate tuples (var, value) to unique ids
+        id_machine = IdMachine[tuple[str, int]]()
+
+        # transform variables
+        F = set()
+        for var in fdr.variables:
+            for val in var.values:
+                varval = (var.name, val)
+                F.add(id_machine.get_id(varval))
+
+        # transform initial state
+        s0 = set(id_machine.get_id((var, val)) for var, val in fdr.init_state)
+
+        # transform goal state
+        g = set(id_machine.get_id((var, val)) for var, val in fdr.goal_state)
+
+        # transform operations into actions
+        A = set()
+        for op in fdr.operators:
+            s_action = STRIPSAction(
+                pre=set(id_machine.get_id((var, val)) for var, val in op.preconditions),
+                add=set(id_machine.get_id((var, val)) for var, val in op.effects),
+                cost=op.cost,
+                name=op.name
+            )
+            A.add(s_action)
+
+        return STRIPS(F, A, s0, g)
+
+    def __init__(self, F: set[int], A: set[STRIPSAction], s0: set[int], g: set[int]):
+        self.F = F
+        self.A = A
+        self.s0 = s0
+        self.g = g
+
+    def __str__(self) -> str:
+        res = f'F: {self.F}\n'
+        res += f's0: {self.s0}\n'
+        res += f'g: {self.g}\n'
+        res += 'A:\n'
+        for a in self.A:
+            res += f'- {a.name} ({a.cost}): {a.pre} -> {a.add}\n'
+        return res
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        raise Exception('Usage: python instance.py <path>')
+        raise Exception('Usage: python strips.py <path>')
 
-    fdr = FDR(sys.argv[1])
-    print(fdr)
+    strips = STRIPS.from_SAS(sys.argv[1])
+    print(strips)
