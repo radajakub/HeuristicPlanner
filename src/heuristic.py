@@ -1,4 +1,4 @@
-from strips import STRIPS
+from instance import STRIPS
 
 
 class Heuristic:

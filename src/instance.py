@@ -1,3 +1,4 @@
+from __future__ import annotations
 import sys
 
 from id_machine import IdMachine
@@ -46,12 +47,12 @@ class FDROperator:
 
 class FDR:
     def __init__(self, path: str):
-        self.id_machine = IdMachine[str]()
-
         self.variables = []
         self.init_state = []
         self.goal_state = []
         self.operators = []
+
+        self.var_machine = IdMachine[str]()
 
         with open(path, 'r') as f:
             lines = [line.strip() for line in f.readlines()]
@@ -75,11 +76,12 @@ class FDR:
             # skip -1
             n += 1
 
+            var_id = self.var_machine.get_id(var.name)
+
             value_num = int(lines[n])
             n += 1
-            for _ in range(value_num):
-                # id = self.id_machine.get_id()
-                var.add_value(lines[n])
+            for i in range(value_num):
+                var.add_value(i)
                 n += 1
 
             assert lines[n] == 'end_variable'
@@ -99,7 +101,8 @@ class FDR:
         n += 1
         for i in range(num_vars):
             action_idx = int(lines[n])
-            self.init_state.append((self.variables[i].name, self.variables[i].values[action_idx]))
+            var_id = self.var_machine.get_id(self.variables[i].name)
+            self.init_state.append((var_id, self.variables[i].values[action_idx]))
             n += 1
         assert lines[n] == 'end_state'
         n += 1
@@ -112,7 +115,8 @@ class FDR:
         for i in range(num_goals):
             var_idx, val_idx = [int(x) for x in lines[n].split()]
             var = self.variables[var_idx]
-            self.goal_state.append((var.name, var.values[val_idx]))
+            var_id = self.var_machine.get_id(var.name)
+            self.goal_state.append((var_id, var.values[val_idx]))
             n += 1
         assert lines[n] == 'end_goal'
         n += 1
@@ -134,7 +138,8 @@ class FDR:
             for _ in range(num_pre):
                 var_idx, val_idx = [int(x) for x in lines[n].split()]
                 var = self.variables[var_idx]
-                operator.add_precondition(var.name, var.values[val_idx])
+                var_id = self.var_machine.get_id(var.name)
+                operator.add_precondition(var_id, var.values[val_idx])
                 n += 1
 
             # preconditions and effects
@@ -143,9 +148,10 @@ class FDR:
             for _ in range(num_eff):
                 _, var_idx, from_idx, to_idx = [int(x) for x in lines[n].split()]
                 var = self.variables[var_idx]
+                var_id = self.var_machine.get_id(var.name)
                 if from_idx != -1:
-                    operator.add_precondition(var.name, var.values[from_idx])
-                operator.add_effect(var.name, var.values[to_idx])
+                    operator.add_precondition(var_id, var.values[from_idx])
+                operator.add_effect(var_id, var.values[to_idx])
                 n += 1
 
             # cost
@@ -183,17 +189,16 @@ class STRIPSAction:
 
 class STRIPS:
     @staticmethod
-    def from_SAS(path: str):
-        fdr = FDR(path)
-
+    def from_FDR(fdr: FDR) -> STRIPS:
         # translate tuples (var, value) to unique ids
-        id_machine = IdMachine[tuple[str, int]]()
+        id_machine = IdMachine[tuple[int, int]]()
 
         # transform variables
         F = set()
         for var in fdr.variables:
+            var_id = fdr.var_machine.get_id(var.name)
             for val in var.values:
-                varval = (var.name, val)
+                varval = (var_id, val)
                 F.add(id_machine.get_id(varval))
 
         # transform initial state
@@ -221,6 +226,23 @@ class STRIPS:
         self.s0 = s0
         self.g = g
 
+    def lm_transform(self, s: set[int]) -> tuple[set[int], set[int]]:
+        down = len(self.F)
+        up = down + 1
+        self.F.add(down)
+        self.F.add(up)
+
+        down_set = {down}
+        up_set = {up}
+
+        self.A.add(STRIPSAction(pre=down_set, add=s, cost=0, name='a_down'))
+        self.A.add(STRIPSAction(pre=self.g, add=up_set, cost=0, name='a_up'))
+
+        self.s0 = down_set
+        self.g = up_set
+
+        return down_set, up_set
+
     def __str__(self) -> str:
         res = f'F: {self.F}\n'
         res += f's0: {self.s0}\n'
@@ -231,9 +253,16 @@ class STRIPS:
         return res
 
 
+class Instance:
+    def __init__(self, path: str):
+        self.fdr = FDR(path)
+        self.strips = STRIPS.from_FDR(self.fdr)
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         raise Exception('Usage: python strips.py <path>')
 
-    strips = STRIPS.from_SAS(sys.argv[1])
-    print(strips)
+    instance = Instance(sys.argv[1])
+    print(instance.fdr)
+    print(instance.strips)
