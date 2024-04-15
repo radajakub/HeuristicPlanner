@@ -29,10 +29,7 @@ class Plan:
 class State:
     @staticmethod
     def initial(instance: Instance) -> State:
-        vs = [0 for i in range(len(instance.fdr.variables))]
-        for (v, d) in instance.fdr.init_state:
-            vs[v] = d
-        return State(vs)
+        return State(instance.fdr.get_s0())
 
     def __init__(self, vs: list[int], plan: Plan = Plan()):
         self.vs = vs
