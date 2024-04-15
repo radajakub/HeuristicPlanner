@@ -41,7 +41,7 @@ class FDROperator:
     def __str__(self) -> str:
         res = f'{self.name} ({self.cost}):\n'
         res += f'- pre: {self.preconditions}\n'
-        res += f'- eff: {self.effects}\n'
+        res += f'- eff: {self.effects}'
         return res
 
 
@@ -218,13 +218,17 @@ class STRIPS:
             )
             A.add(s_action)
 
-        return STRIPS(F, A, s0, g)
+        return STRIPS(F, A, s0, g, id_machine)
 
-    def __init__(self, F: set[int], A: set[STRIPSAction], s0: set[int], g: set[int]):
+    def __init__(self, F: set[int], A: set[STRIPSAction], s0: set[int], g: set[int], id_machine: IdMachine[tuple[int, int]]):
         self.F = F
         self.A = A
         self.s0 = s0
         self.g = g
+        self.id_machine = id_machine
+
+    def vars_to_facts(self, v: list[int]) -> list[int]:
+        return [self.id_machine.get_id(x) for x in enumerate(v)]
 
     def lm_transform(self, s: set[int]) -> tuple[set[int], set[int]]:
         down = len(self.F)
