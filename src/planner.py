@@ -97,7 +97,7 @@ def search(instance: Instance, hclass: Heuristic) -> Plan:
             v = new_s.plan.value
             if (v < g[*new_s.vs]):
                 g[*new_s.vs] = v
-                hs, _ = h(new_s.vs)
+                hs = h(new_s.vs)
                 open.put((v + hs, it, new_s))
 
     return None
