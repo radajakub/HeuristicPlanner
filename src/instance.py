@@ -163,12 +163,6 @@ class FDR:
             self.operators.append(operator)
             n += 1
 
-    def get_s0(self) -> list[int]:
-        vs = [0 for _ in range(len(self.variables))]
-        for (v, d) in self.init_state:
-            vs[v] = d
-        return vs
-
     def __str__(self) -> str:
         res = 'V:\n'
         for var in self.variables:

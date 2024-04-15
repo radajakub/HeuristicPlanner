@@ -29,7 +29,10 @@ class Plan:
 class State:
     @staticmethod
     def initial(instance: Instance) -> State:
-        return State(instance.fdr.get_s0())
+        vs = [0 for _ in range(len(instance.fdr.variables))]
+        for (v, d) in instance.fdr.init_state:
+            vs[v] = d
+        return State(vs)
 
     def __init__(self, vs: list[int], plan: Plan = Plan()):
         self.vs = vs
@@ -66,9 +69,6 @@ class State:
         res += '\n'
         res += str(self.plan)
         return res
-
-    def __repr__(self) -> str:
-        return str(self)
 
 
 def search(instance: Instance, hclass: Heuristic) -> Plan:

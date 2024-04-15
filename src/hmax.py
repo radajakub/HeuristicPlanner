@@ -6,6 +6,7 @@ from heuristic import Heuristic
 
 
 class Hmax(Heuristic):
+    # function that takes list of strips facts
     def compute(self, s: list[int]) -> tuple[int, np.ndarray]:
         # prepare enriched state
         sigma = np.full(len(self.strips.F), np.iinfo(np.int32).max, dtype=int)
@@ -42,9 +43,9 @@ class Hmax(Heuristic):
 
         return max(sigma[p] for p in self.strips.g), sigma
 
+    # function that takes the state in format [v1, v2, ..., vk] for variables [1, 2, ..., k]
     def __call__(self, s: list[int]) -> int:
-        s = self.strips.vars_to_facts(s)
-        return self.compute(s)[0]
+        return self.compute(self.strips.vars_to_facts(s))[0]
 
 
 if __name__ == '__main__':
@@ -54,4 +55,4 @@ if __name__ == '__main__':
     instance = Instance(sys.argv[1])
     heuristic = Hmax(instance.strips)
 
-    print(heuristic(instance.fdr.get_s0()))
+    print(heuristic.compute(instance.strips.s0)[0])
