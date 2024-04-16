@@ -4,12 +4,14 @@ import numpy as np
 from instance import Instance
 from heuristic import Heuristic
 
+INF = np.iinfo(np.int32).max
+
 
 class Hmax(Heuristic):
     # function that takes list of strips facts
     def compute(self, s: list[int]) -> tuple[int, np.ndarray]:
         # prepare enriched state
-        sigma = np.full(len(self.strips.F), np.iinfo(np.int32).max, dtype=int)
+        sigma = np.full(len(self.strips.F), INF, dtype=int)
         for p in s:
             sigma[p] = 0
 

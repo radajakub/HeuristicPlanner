@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import sys
 from queue import PriorityQueue
+from collections import defaultdict
 
 import numpy as np
 
 from instance import Instance, FDROperator
 from heuristic import Heuristic
-from hmax import Hmax
+from hmax import Hmax, INF
 
 
 class Plan:
@@ -29,12 +30,12 @@ class Plan:
 class State:
     @staticmethod
     def initial(instance: Instance) -> State:
-        vs = [0 for _ in range(len(instance.fdr.variables))]
+        vs = np.zeros(len(instance.fdr.variables), dtype=int)
         for (v, d) in instance.fdr.init_state:
             vs[v] = d
         return State(vs)
 
-    def __init__(self, vs: list[int], plan: Plan = Plan()):
+    def __init__(self, vs: np.ndarray, plan: Plan = Plan()):
         self.vs = vs
         self.plan = plan
 
@@ -51,7 +52,7 @@ class State:
         return applicable
 
     def apply(self, op: FDROperator) -> State:
-        new_vs = self.vs.copy()
+        new_vs = np.copy(self.vs)
         for var, val in op.effects:
             new_vs[var] = val
         return State(new_vs, self.plan.add_action(op))
@@ -76,12 +77,8 @@ def search(instance: Instance, hclass: Heuristic) -> Plan:
 
     s0 = State.initial(instance)
 
-    shape = tuple(len(v.values) for v in instance.fdr.variables)
-
-    # try it with a matrix, we can do it with dict then
-    g = np.full(shape, np.inf)
-    # g = defaultdict(np.inf)
-    g[*s0.vs] = 0
+    g = defaultdict(lambda: INF)
+    g[tuple(s0.vs)] = 0
 
     open = PriorityQueue()
 
@@ -95,8 +92,9 @@ def search(instance: Instance, hclass: Heuristic) -> Plan:
             it += 1
             new_s = s.apply(op)
             v = new_s.plan.value
-            if (v < g[*new_s.vs]):
-                g[*new_s.vs] = v
+            key = tuple(new_s.vs)
+            if v < g[key]:
+                g[key] = v
                 hs = h(new_s.vs)
                 open.put((v + hs, it, new_s))
 
@@ -115,4 +113,5 @@ if __name__ == '__main__':
         raise Exception('Unknown <heuristic> - options are {hmax}')
 
     plan = search(instance, h)
+
     print(plan)

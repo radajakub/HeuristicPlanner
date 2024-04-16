@@ -1,4 +1,5 @@
 from __future__ import annotations
+from copy import deepcopy
 import sys
 
 from id_machine import IdMachine
@@ -186,6 +187,9 @@ class STRIPSAction:
         self.cost = cost
         self.name = name
 
+    def __str__(self) -> str:
+        return f'- {self.name} ({self.cost}): {self.pre} -> {self.add}'
+
 
 class STRIPS:
     @staticmethod
@@ -208,7 +212,7 @@ class STRIPS:
         g = set(id_machine.get_id((var, val)) for var, val in fdr.goal_state)
 
         # transform operations into actions
-        A = set()
+        A = list()
         for op in fdr.operators:
             s_action = STRIPSAction(
                 pre=set(id_machine.get_id((var, val)) for var, val in op.preconditions),
@@ -216,11 +220,11 @@ class STRIPS:
                 cost=op.cost,
                 name=op.name
             )
-            A.add(s_action)
+            A.append(s_action)
 
         return STRIPS(F, A, s0, g, id_machine)
 
-    def __init__(self, F: set[int], A: set[STRIPSAction], s0: set[int], g: set[int], id_machine: IdMachine[tuple[int, int]]):
+    def __init__(self, F: set[int], A: list[STRIPSAction], s0: set[int], g: set[int], id_machine: IdMachine[tuple[int, int]]):
         self.F = F
         self.A = A
         self.s0 = s0
@@ -230,22 +234,25 @@ class STRIPS:
     def vars_to_facts(self, v: list[int]) -> list[int]:
         return [self.id_machine.get_id(x) for x in enumerate(v)]
 
-    def lm_transform(self, s: set[int]) -> tuple[set[int], set[int]]:
-        down = len(self.F)
+    def lm_transform(self, s: list[int]) -> STRIPS:
+        strips = deepcopy(self)
+
+        down = len(strips.F)
         up = down + 1
-        self.F.add(down)
-        self.F.add(up)
+
+        strips.F.add(down)
+        strips.F.add(up)
 
         down_set = {down}
         up_set = {up}
 
-        self.A.add(STRIPSAction(pre=down_set, add=s, cost=0, name='a_down'))
-        self.A.add(STRIPSAction(pre=self.g, add=up_set, cost=0, name='a_up'))
+        strips.A.append(STRIPSAction(pre=down_set, add=s, cost=0, name='a_down'))
+        strips.A.append(STRIPSAction(pre=self.g, add=up_set, cost=0, name='a_up'))
 
-        self.s0 = down_set
-        self.g = up_set
+        strips.s0 = down_set
+        strips.g = up_set
 
-        return down_set, up_set
+        return strips
 
     def __str__(self) -> str:
         res = f'F: {self.F}\n'
@@ -253,7 +260,7 @@ class STRIPS:
         res += f'g: {self.g}\n'
         res += 'A:\n'
         for a in self.A:
-            res += f'- {a.name} ({a.cost}): {a.pre} -> {a.add}\n'
+            res += f'{a}\n'
         return res
 
 
