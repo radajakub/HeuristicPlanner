@@ -237,10 +237,10 @@ class STRIPS:
     def lm_transform(self, s: list[int]) -> STRIPS:
         strips = deepcopy(self)
 
-        down = len(strips.F)
-        up = down + 1
-
+        down = strips.id_machine.get_id((len(strips.F), 0))
         strips.F.add(down)
+
+        up = strips.id_machine.get_id((len(strips.F), 0))
         strips.F.add(up)
 
         down_set = {down}

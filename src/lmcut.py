@@ -18,6 +18,7 @@ class JustificationGraph:
         self.num_vertices = len(strips.F)
         # do edges as adjacency list where items are tuples (A, q)
         self.E = [[] for _ in range(self.num_vertices)]
+        # save also reversed edges for faster traversal
         self.E_rev = [[] for _ in range(self.num_vertices)]
         for ai, a in enumerate(strips.A):
             p = pcf[ai]
@@ -40,7 +41,6 @@ class JustificationGraph:
                 if new_cost == 0 and not visited[s_]:
                     visited[s_] = True
                     q.append((s_, new_cost))
-        # print(f'up_set: {up_set}')
 
         visited = np.zeros(len(self.V), dtype=bool)
         q = [s0 for s0 in self.strips.s0]
@@ -51,17 +51,15 @@ class JustificationGraph:
             s = q.pop(0)
             down_set.add(s)
             for a, s_ in self.E[s]:
-                if not visited[s_] and not s_ in up_set:
+                if not visited[s_] and s_ not in up_set:
                     visited[s_] = True
                     q.append(s_)
-        # print(f'down_set: {down_set}')
 
         landmark = set()
         for p, edges in enumerate(self.E):
             for a, q in edges:
                 if p in down_set and q in up_set:
                     landmark.add(a)
-                    # print(f'landmark: {a.name}')
         return min(l.cost for l in landmark), landmark
 
     def __str__(self) -> str:
@@ -88,10 +86,9 @@ class LMCut(Heuristic):
                 if s_star[p] > p_max:
                     p_max = s_star[p]
                     pcf[ai] = p
-                # TODO: improve lexicographic ordering for the same value
-                elif s_star[p] == p_max and p in strips.id_machine.ids:
-                    v1, d1 = strips.id_machine.get_value(p)
-                    v2, d2 = strips.id_machine.get_value(pcf[ai])
+                elif s_star[p] == p_max:
+                    v1, d1 = strips.id_machine.get_value(pcf[ai])
+                    v2, d2 = strips.id_machine.get_value(p)
                     if v1 < v2 or (v1 == v2 and d1 < d2):
                         pcf[ai] = p
         return pcf
@@ -124,8 +121,10 @@ class LMCut(Heuristic):
             for a in cut:
                 a.cost -= cut_cost
 
+            # adjust heuristic value
             hlmcut += cut_cost
 
+            # recompute hmax and fixed point
             hmax, s_star = hmax_fun.compute(list(strips.s0))
 
         return hlmcut
@@ -188,10 +187,6 @@ def test() -> None:
 
 
 if __name__ == '__main__':
-    # test Justification graph
-    # test()
-    # exit(0)
-
     if len(sys.argv) != 2:
         raise Exception('Usage: python lmcut.py <path>')
 

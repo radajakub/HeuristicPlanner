@@ -9,6 +9,7 @@ import numpy as np
 from instance import Instance, FDROperator
 from heuristic import Heuristic
 from hmax import Hmax, INF
+from lmcut import LMCut
 
 
 class Plan:
@@ -109,6 +110,8 @@ if __name__ == '__main__':
 
     if sys.argv[2] == 'hmax':
         h = Hmax
+    elif sys.argv[2] == 'lmcut':
+        h = LMCut
     else:
         raise Exception('Unknown <heuristic> - options are {hmax}')
 
