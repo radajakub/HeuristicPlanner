@@ -87,9 +87,9 @@ class LMCut(Heuristic):
                     p_max = s_star[p]
                     pcf[ai] = p
                 elif s_star[p] == p_max:
-                    v1, d1 = strips.id_machine.get_value(pcf[ai])
-                    v2, d2 = strips.id_machine.get_value(p)
-                    if v1 < v2 or (v1 == v2 and d1 < d2):
+                    v1, d1 = strips.id_machine.get_value(p)
+                    v2, d2 = strips.id_machine.get_value(pcf[ai])
+                    if v1 > v2 or (v1 == v2 and d1 > d2):
                         pcf[ai] = p
         return pcf
 
