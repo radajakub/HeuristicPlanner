@@ -6,3 +6,4 @@
 | blocks-8-0     |   -   |   13   |     -     |
 | woodworking 01 |   -   |  170   |     -     |
 | pegsol09       |   -   |   2    |     -     |
+| transport02    |   -   |  115   |     -     |

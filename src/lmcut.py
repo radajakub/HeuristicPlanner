@@ -60,6 +60,7 @@ class JustificationGraph:
             for a, q in edges:
                 if p in down_set and q in up_set:
                     landmark.add(a)
+
         return min(l.cost for l in landmark), landmark
 
     def __str__(self) -> str:
@@ -81,7 +82,7 @@ class LMCut(Heuristic):
         # compute pcf(a) = argmax_{p in pre_a} s_star(p) for a in A
         pcf = np.zeros(len(strips.A), dtype=int)
         for ai, a in enumerate(strips.A):
-            p_max = -1
+            p_max = -INF
             for p in a.pre:
                 if s_star[p] > p_max:
                     p_max = s_star[p]
@@ -117,12 +118,12 @@ class LMCut(Heuristic):
             # compute cut
             cut_cost, cut = jg.cut()
 
+            # adjust heuristic value
+            hlmcut += cut_cost
+
             # adjust costs of actions
             for a in cut:
                 a.cost -= cut_cost
-
-            # adjust heuristic value
-            hlmcut += cut_cost
 
             # recompute hmax and fixed point
             hmax, s_star = hmax_fun.compute(list(strips.s0))
