@@ -10,6 +10,7 @@ INF = np.iinfo(np.int32).max
 class Hmax(Heuristic):
     # function that takes list of strips facts
     def compute(self, s: list[int]) -> tuple[int, np.ndarray]:
+        remaining = set(self.strips.F)
         # prepare enriched state
         sigma = np.full(len(self.strips.F), INF, dtype=int)
         for p in s:
@@ -25,15 +26,15 @@ class Hmax(Heuristic):
                 for p in a.add:
                     sigma[p] = min(sigma[p], a.cost)
 
-        C = set()
-        while not self.strips.g.issubset(C):
+        while remaining:
             q = None
             q_min = np.inf
-            for r in self.strips.F.difference(C):
+            # for r in self.strips.F.difference(C):
+            for r in remaining:
                 if sigma[r] < q_min:
                     q_min = sigma[r]
                     q = r
-            C.add(q)
+            remaining.remove(q)
             for ai, a in enumerate(self.strips.A):
                 if q in a.pre:
                     U[ai] -= 1
